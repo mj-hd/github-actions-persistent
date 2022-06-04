@@ -1,0 +1,35 @@
+name: Counter
+
+on:
+  watch:
+    types: [started]
+
+env:
+  STATE_FILE: './state'
+
+jobs:
+  increment:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: IDの生成
+        id: build-id
+        run: echo "::set-output name=id::$(date +%s)"
+
+      - uses: actions/cache@v3
+        id: state
+        with:
+          path: ${{ env.STATE_FILE }}
+          key: counter-${{ steps.build-id.outputs.id }}
+          restore-keys: counter-
+
+      - name: 初回ならカウンターを初期化
+        run: |
+          if [ ! -f ${{ env.STATE_FILE }} ]; then
+            echo '0' > ${{ env.STATE_FILE }}
+          fi
+
+      - name: カウンターをインクリメントする
+        run: |
+          VALUE=$(cat ${{ env.STATE_FILE }})
+          echo "CURRENT: $VALUE"
+          echo "$((VALUE + 1))" >| ${{ env.STATE_FILE }}
